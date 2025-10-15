@@ -21,54 +21,27 @@ def select_llm_model():
 
 def get_llm_model_and_api(model_type):
     if model_type == "OpenAI":
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            api_key = st.text_input(
-                "Enter your OpenAI API Key: [(click here to obtain a new key if you do not have one)](https://platform.openai.com/account/api-keys)",
-                type="password",
-            )
-        api_model = os.getenv("OPENAI_DEFAULT_MODEL") or st.selectbox(
-            "Select a model to use for the LLMs:",
-            ["gpt-5", "gpt-4.1", "gpt-3.5-turbo"],
-            index=0,
-        )
+        api_key = st.session_state.get("openai_api_key")
+        api_model = st.session_state.get("openai_model")
+    elif model_type == "Anthropic":
+        api_key = st.session_state.get("anthropic_api_key")
+        api_model = st.session_state.get("anthropic_model")
     elif model_type == "Gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            api_key = st.text_input(
-                "Enter your Gemini API Key: [(click here to obtain a new key if you do not have one)](https://aistudio.google.com/apikey)",
-                type="password",
-            )
-        api_model = "gemini-2.5-flash"
+        api_key = st.session_state.get("gemini_api_key")
+        api_model = st.session_state.get("gemini_model")
+    elif model_type == "Ollama":
+        api_key = None
+        api_model = st.session_state.get("ollama_model", "llama3")
+    elif model_type == "Self-Hosted":
+        api_key = None
+        api_model = st.session_state.get("self_hosted_model", "llama3")
     else:
-        if os.getenv("GEMINI_API_KEY"):
-            api_key = os.getenv("GEMINI_API_KEY")
-        elif os.getenv("OPENAI_API_KEY"):
-            api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            api_key = st.text_input(
-                "Enter the self-hosted API key: [(Most times you can just write random text)]",
-                    type="password",
-            )
-        # Use Ollama API as default
-        location = "http://127.0.0.1:11434/v1"
-        location = st.text_input(
-            "Enter the self-hosted API location (e.g. " + location + "):",
-            type="default"
-        )
-        model_list = []
-        try:
-            client = openai.OpenAI(base_url=location, api_key=api_key)
-            model_list = [model.id for model in client.models.list()]
-        except:
-            st.markdown(
-                "The current API key or location is incorrect. Please try again."
-            )
-        api_model = st.selectbox(
-            "Select a model to use for the LLMs:",
-            model_list,
-            index=0
-        )
+        api_key, api_model = None, None
+
+    if model_type not in ["Ollama", "Self-Hosted"] and not api_key:
+        st.error("Please provide your API key.")
+        st.stop()
+
     return api_key, api_model
 
 
